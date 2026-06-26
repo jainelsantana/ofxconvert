@@ -1,32 +1,7 @@
-# dependências
-/node_modules
-/.pnp
-.pnp.js
-
-# build do Next.js
-/.next/
-/out/
-
-# builds de produção
-/build
-
-# arquivos de ambiente locais
 .env
-.env*.local
-
-# logs de depuração
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# outros arquivos do sistema / IDEs
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.env.local
+.env.production
+.env.*.local
+node_modules
+.next
+out
