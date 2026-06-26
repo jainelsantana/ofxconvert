@@ -1,7 +1,8 @@
+node_modules
+.next
+out
 .env
 .env.local
 .env.production
 .env.*.local
-node_modules
-.next
-out
+npm-debug.log

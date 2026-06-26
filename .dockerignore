@@ -3,13 +3,9 @@ node_modules
 out
 .git
 .gitignore
-.dockerignore
-Dockerfile
-docker-compose.yml
 .env
 .env.local
+.env.production
+.env.*.local
 npm-debug.log
 README.md
-C:\Users\jaine\.gemini
-.agents
-C:\Users\jaine\.gemini\antigravity-ide
