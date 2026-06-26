@@ -57,13 +57,14 @@ Após converter o OFX, a API envia automaticamente um e-mail com o resumo do ext
 Preencha a senha da conta SMTP no arquivo `.env` antes de usar em produção:
 
 ```env
-SMTP_HOST=mail.oraempresas.com.br
+SMTP_HOST=mail.empresa.com.br
 SMTP_PORT=465
 SMTP_SECURE=true
-SMTP_USER=convertofx@oraempresas.com.br
-SMTP_PASS=sua_senha_aqui
-SMTP_FROM=convertofx@oraempresas.com.br
-SMTP_TO=jainel.santana@oratelecom.com.br
+SMTP_USER=mail@mail.com.br
+SMTP_PASS=
+SMTP_FROM=mail@mail.com.br
+SMTP_TO=mail@mail.com.br
+
 ```
 
 Se `SMTP_PASS` estiver vazio, a conversão é interrompida com uma mensagem de configuração para evitar falso sucesso no envio.
