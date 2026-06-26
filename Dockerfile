@@ -3,6 +3,7 @@ FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Copiar arquivos de definição de pacotes
 COPY package.json ./
 RUN npm install
 
@@ -12,7 +13,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Desabilitar telemetria do Next.js durante a build
 ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN npm run build
 
 # Estágio 3: Container de produção
@@ -25,15 +28,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copiar arquivos estáticos e compilados para o servidor standalone
-COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/public ./public
+
+# Configurar permissões adequadas para o cache de renderização
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Copiar os arquivos standalone otimizados
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Copiar node_modules para disponibilizar pacotes externos em runtime
-# (nodemailer, exceljs, pdf-lib são usados via serverExternalPackages e
-# não são incluídos automaticamente no bundle standalone do Next.js)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 USER nextjs
 
@@ -46,3 +49,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://localhost:3000').then(res => res.status === 200 ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
 CMD ["node", "server.js"]
+
