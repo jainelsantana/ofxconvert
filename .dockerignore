@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+.env
+.env.local
+npm-debug.log
+README.md
+C:\Users\jaine\.gemini
+.agents
+C:\Users\jaine\.gemini\antigravity-ide
