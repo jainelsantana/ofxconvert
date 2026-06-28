@@ -1,0 +1,12 @@
+services:
+  convertofx:
+    build: .
+    image: convertofx:latest
+    container_name: convertofx
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./app/storage:/app/app/storage
+    restart: unless-stopped

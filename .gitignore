@@ -1,0 +1,11 @@
+.env
+.venv/
+.pycache/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+*.pyc
+*.pyo
+*.pyd
+app/storage/temp/*
+!app/storage/temp/.gitkeep
