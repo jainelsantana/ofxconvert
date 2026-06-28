@@ -1,167 +1,72 @@
 # ConvertOFX
 
-Aplicacao web em FastAPI para receber um arquivo OFX, extrair movimentacoes financeiras, gerar um relatorio PDF e uma planilha Excel `.xlsx`, acompanhar a conversao em tempo real e enviar os arquivos por e-mail via SMTP.
+Aplicacao web em Next.js para converter arquivos OFX em relatorios PDF e Excel, com envio SMTP opcional. O download dos arquivos continua disponivel mesmo quando o SMTP falha.
 
-## Objetivo do projeto
+## Stack atual
 
-O ConvertOFX transforma extratos OFX em entregas prontas para uso operacional, com identidade visual inspirada na ORA Empresas e envio opcional por SMTP sem bloquear os downloads em caso de falha.
+- Next.js 14 com App Router
+- Build standalone (`output: "standalone"`)
+- Node.js 20
+- Dockerfile multi-stage
+- Nodemailer para SMTP
+- PDFKit para PDF
+- SheetJS `xlsx` para Excel
 
-## Tecnologias usadas
+## Deploy definitivo no Coolify
 
-- Python 3.11+
-- FastAPI
-- Jinja2 Templates
-- HTML5, CSS puro e JavaScript puro
-- OFXParse com fallback manual para OFX SGML
-- ReportLab
-- OpenPyXL
-- SMTP com `smtplib`
-- Docker e Docker Compose
+Configure a aplicacao no Coolify com:
 
-## Como rodar localmente
+- Build Pack: `Dockerfile`
+- Porta exposta: `3000`
+- Health check: `/health` ou `/api/health`
+- Comando final da imagem: `node server.js`
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload
-```
-
-## Como rodar com Docker
-
-```bash
-docker compose down
-docker compose up -d --build --force-recreate
-docker logs -f convertofx
-```
-
-## Como configurar o `.env`
+O container escuta em `0.0.0.0:3000` por meio das variaveis:
 
 ```env
-APP_NAME=ConvertOFX
-APP_ENV=production
-APP_URL=http://localhost:8000
+PORT=3000
+HOSTNAME=0.0.0.0
+```
 
+## Variaveis de ambiente
+
+Cadastre no Coolify:
+
+```env
 SMTP_HOST=mail.seudominio.com.br
-SMTP_PORT=465
+SMTP_PORT=587
+SMTP_SECURE=false
 SMTP_USER=usuario@seudominio.com.br
-SMTP_PASSWORD=sua_senha
+SMTP_PASS=sua_senha
 SMTP_FROM=usuario@seudominio.com.br
 SMTP_TO=destino@seudominio.com.br
-SMTP_USE_TLS=false
-SMTP_USE_SSL=true
 
+APP_NAME=ConvertOFX
 MAX_UPLOAD_MB=10
 TEMP_FILE_TTL_MINUTES=30
 ```
 
-## Configuracao SMTP
-
-Porta `465` com SSL:
-
-- `SMTP_PORT=465`
-- `SMTP_USE_SSL=true`
-- `SMTP_USE_TLS=false`
-
-Porta `587` com STARTTLS:
-
-- `SMTP_PORT=587`
-- `SMTP_USE_SSL=false`
-- `SMTP_USE_TLS=true`
-
-O sistema valida automaticamente:
-
-- `SMTP_USE_TLS` e `SMTP_USE_SSL` nao podem ser `true` ao mesmo tempo
-- porta `465` exige SSL
-- porta `587` exige STARTTLS
-- `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` e `SMTP_TO` sao obrigatorios
-
-## Fluxo da conversao
-
-1. Envie o arquivo OFX pela tela principal.
-2. Acompanhe a barra de progresso.
-3. Aguarde a geracao do PDF e do Excel.
-4. O sistema tenta enviar os anexos por SMTP.
-5. Baixe o PDF e o Excel pela tela.
-
-## Etapas da barra de progresso
-
-- Enviando arquivo
-- Validando OFX
-- Extraindo movimentacoes
-- Gerando PDF
-- Gerando Excel
-- Enviando e-mail
-- Concluido
-
-O endpoint `GET /progress/{job_id}` tambem informa:
-
-- `email_status`: `pending`, `sending`, `sent` ou `failed`
-- `email_error`: mensagem real do SMTP quando houver falha
-
-## Downloads
-
-Rotas disponiveis:
-
-- `GET /download/{job_id}/pdf`
-- `GET /download/{job_id}/excel`
-
-Mesmo que o SMTP falhe, os downloads continuam disponiveis enquanto os arquivos temporarios existirem.
-
-## Arquivos temporarios
-
-Os arquivos ficam em `app/storage/temp/{job_id}/`:
-
-- `upload.ofx`
-- `relatorio.pdf`
-- `relatorio.xlsx`
-
-Eles sao removidos:
-
-- depois que PDF e Excel forem baixados
-- ou automaticamente apos o TTL configurado em `TEMP_FILE_TTL_MINUTES`
-
-## Teste de envio de e-mail
-
-Antes de converter um OFX, valide o SMTP:
-
-```bash
-curl -X POST http://localhost:8000/test-email
-```
-
-Se retornar erro, confira:
-
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_USER`
-- `SMTP_PASSWORD`
-- `SMTP_FROM`
-- `SMTP_TO`
-- `SMTP_USE_TLS`
-- `SMTP_USE_SSL`
-
-Para cPanel/webmail, teste primeiro:
+Para SMTP na porta `465`, use:
 
 ```env
 SMTP_PORT=465
-SMTP_USE_SSL=true
-SMTP_USE_TLS=false
+SMTP_SECURE=true
 ```
 
-Se nao funcionar, teste:
-
-```env
-SMTP_PORT=587
-SMTP_USE_SSL=false
-SMTP_USE_TLS=true
-```
-
-## Como testar `/health`
+## Como rodar localmente com Docker
 
 ```bash
-curl http://localhost:8000/health
+cp .env.example .env
+docker compose down
+docker compose up -d --build
+docker logs -f ofx-converter-web
 ```
+
+Acesse:
+
+- Tela principal: `http://localhost:3000`
+- Health check: `http://localhost:3000/health`
+- Health check alternativo: `http://localhost:3000/api/health`
 
 Resposta esperada:
 
@@ -169,64 +74,56 @@ Resposta esperada:
 {"status":"ok","service":"ConvertOFX"}
 ```
 
-## Como testar `/progress/{job_id}`
+## Teste de dominio no Coolify
 
-Depois de iniciar a conversao com `POST /convert`, consulte:
+Depois do deploy, abra o dominio configurado e confirme:
 
-```bash
-curl http://localhost:8000/progress/SEU_JOB_ID
-```
+1. A tela principal do ConvertOFX carrega.
+2. `https://seu-dominio.com/health` retorna `{"status":"ok","service":"ConvertOFX"}`.
+3. O upload de um arquivo `.ofx` inicia a conversao.
+4. Os links de PDF e Excel aparecem ao final.
 
-Exemplo com sucesso:
+## Teste de SMTP
 
-```json
-{
-  "job_id": "abc123",
-  "status": "done",
-  "progress": 100,
-  "step": "Concluído",
-  "message": "Arquivo convertido e enviado com sucesso.",
-  "email_status": "sent",
-  "email_error": null,
-  "downloads": {
-    "pdf": "/download/abc123/pdf",
-    "excel": "/download/abc123/excel"
-  }
-}
-```
-
-Exemplo com falha SMTP:
-
-```json
-{
-  "job_id": "abc123",
-  "status": "done",
-  "progress": 100,
-  "step": "Concluído com aviso",
-  "message": "Arquivos gerados com sucesso, mas houve erro no envio do e-mail. Baixe o PDF e o Excel pela tela.",
-  "email_status": "failed",
-  "email_error": "Authentication failed",
-  "downloads": {
-    "pdf": "/download/abc123/pdf",
-    "excel": "/download/abc123/excel"
-  }
-}
-```
-
-## Logs SMTP
-
-O envio registra no `docker logs`:
-
-- inicio da tentativa SMTP
-- host, porta, SSL/TLS, remetente e destinatario
-- nomes dos anexos
-- sucesso do envio
-- erro real retornado pelo SMTP
-
-As senhas nunca aparecem nos logs.
-
-## Como rodar os testes
+Com as variaveis SMTP configuradas:
 
 ```bash
-pytest
+curl -X POST https://seu-dominio.com/test-email
 ```
+
+Em ambiente local:
+
+```bash
+curl -X POST http://localhost:3000/test-email
+```
+
+Se o SMTP falhar durante uma conversao, a aplicacao mostra o erro na tela como aviso e mantem os downloads do PDF e Excel.
+
+## Fluxo da conversao
+
+1. Envie um arquivo `.ofx`.
+2. Acompanhe o progresso.
+3. A aplicacao gera `relatorio.pdf` e `relatorio.xlsx`.
+4. A aplicacao tenta enviar os arquivos por SMTP.
+5. Se o SMTP funcionar, o job termina com sucesso.
+6. Se o SMTP falhar, o job termina com aviso e os downloads continuam disponiveis.
+
+## Rotas principais
+
+- `GET /`
+- `GET /health`
+- `GET /api/health`
+- `POST /convert`
+- `GET /progress/{job_id}`
+- `GET /download/{job_id}/pdf`
+- `GET /download/{job_id}/excel`
+- `POST /test-email`
+
+## Desenvolvimento local sem Docker
+
+```bash
+npm install
+npm run dev
+```
+
+Depois acesse `http://localhost:3000`.

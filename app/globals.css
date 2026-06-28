@@ -1,8 +1,8 @@
 /* ─────────────────────────────────────────────────
    CONVERTOFX · Design System — ORA Empresas
-   Stack: HTML/CSS puro + Jinja2 + FastAPI
-   Revisão completa: Dark-aware light mode, Inter font,
-   micro-animações, glassmorphism sutil, WCAG AA.
+   Stack: Next.js + HTML/CSS
+   Revisao completa: Dark-aware light mode, Inter font,
+   micro-animacoes, glassmorphism sutil, WCAG AA.
    ───────────────────────────────────────────────── */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');

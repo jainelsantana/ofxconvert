@@ -1,12 +1,17 @@
 services:
-  convertofx:
+  web:
     build: .
-    image: convertofx:latest
-    container_name: convertofx
+    image: ofx-converter-web:latest
+    container_name: ofx-converter-web
     ports:
-      - "8000:8000"
+      - "3000:3000"
     env_file:
       - .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      STORAGE_DIR: /app/storage
     volumes:
-      - ./app/storage:/app/app/storage
+      - ./storage:/app/storage
     restart: unless-stopped
