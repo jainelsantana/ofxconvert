@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createJob, cleanupExpiredJobs, ensureTempDir } from "@/lib/jobs";
 import { getSettings } from "@/lib/settings";
 import { processConversionJob, sanitizeFilename, validateContent, validateFilename } from "@/lib/conversion";
@@ -7,11 +7,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request) {
-  const settings = getSettings();
-  await ensureTempDir();
-  await cleanupExpiredJobs();
-
   try {
+    const settings = getSettings();
+    await ensureTempDir();
+    await cleanupExpiredJobs();
+
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -26,8 +26,12 @@ export async function POST(request) {
     validateContent(content, settings.maxUploadBytes);
 
     const job = createJob(filename);
-    processConversionJob(job.job_id, filename, content).catch((error) => {
-      console.error("[CONVERT] Erro em background:", error);
+    after(async () => {
+      try {
+        await processConversionJob(job.job_id, filename, content);
+      } catch (error) {
+        console.error("[CONVERT] Erro em background:", error);
+      }
     });
 
     return NextResponse.json(

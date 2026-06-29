@@ -1,6 +1,6 @@
 # ConvertOFX
 
-Aplicacao web para converter extratos bancarios em formato OFX para relatorios em PDF e Excel. O usuario envia um arquivo `.ofx`, acompanha o progresso na tela e, ao final, pode baixar os arquivos gerados. A aplicacao tambem tenta enviar o PDF e a planilha por e-mail via SMTP.
+Aplicacao web para converter extratos bancarios em formato OFX para relatorios em PDF e Excel. O usuario envia um arquivo `.ofx`, acompanha o progresso na tela e, ao final, pode baixar os arquivos gerados. A aplicacao tambem envia o PDF e a planilha por e-mail via SMTP quando a configuracao estiver completa.
 
 Se o envio por e-mail falhar, a conversao nao e perdida: os links de download continuam disponiveis na tela.
 
@@ -12,7 +12,7 @@ Se o envio por e-mail falhar, a conversao nao e perdida: os links de download co
 - Separacao de entradas e saidas.
 - Geracao de `relatorio.pdf`.
 - Geracao de `relatorio.xlsx`.
-- Envio opcional dos arquivos por SMTP.
+- Envio automatico dos arquivos por SMTP.
 - Acompanhamento de progresso por job.
 - Download dos arquivos gerados.
 - Limpeza automatica dos arquivos temporarios.
@@ -23,7 +23,7 @@ Se o envio por e-mail falhar, a conversao nao e perdida: os links de download co
 - Next.js 16 com App Router
 - React 19
 - Node.js 20
-- Build standalone do Next.js
+- Build standalone do Next.js com `serverExternalPackages: ["nodemailer"]`
 - Docker multi-stage
 - Nodemailer para SMTP
 - PDFKit para PDF
@@ -36,7 +36,7 @@ Se o envio por e-mail falhar, a conversao nao e perdida: os links de download co
 3. O arquivo e validado e salvo temporariamente.
 4. As movimentacoes sao extraidas do OFX.
 5. A aplicacao gera um PDF e uma planilha Excel.
-6. A aplicacao tenta enviar os arquivos por e-mail.
+6. A aplicacao tenta enviar os arquivos por e-mail logo apos gerar o PDF e o Excel.
 7. A tela acompanha o progresso por `GET /progress/{jobId}`.
 8. Ao concluir, a tela exibe os links para baixar PDF e Excel.
 
@@ -54,12 +54,13 @@ Exemplo:
 
 ```env
 SMTP_HOST=mail.seudominio.com.br
-SMTP_PORT=587
-SMTP_SECURE=false
+SMTP_PORT=465
+SMTP_SECURE=true
 SMTP_USER=usuario@seudominio.com.br
 SMTP_PASS=sua_senha
 SMTP_FROM=usuario@seudominio.com.br
 SMTP_TO=destino@seudominio.com.br
+TEST_EMAIL_TOKEN=troque-este-token
 
 APP_NAME=ConvertOFX
 MAX_UPLOAD_MB=10
@@ -71,11 +72,11 @@ Observacoes:
 
 - `SMTP_PORT=587` normalmente usa `SMTP_SECURE=false`.
 - `SMTP_PORT=465` deve usar `SMTP_SECURE=true`.
-- `SMTP_USE_TLS=true` pode ser usado quando o servidor exigir STARTTLS.
-- `SMTP_PASS` tambem pode ser informado como `SMTP_PASSWORD`.
+- `SMTP_PASS` e a unica variavel aceita para senha SMTP.
 - `MAX_UPLOAD_MB` define o tamanho maximo aceito para upload.
 - `TEMP_FILE_TTL_MINUTES` define por quanto tempo os arquivos ficam disponiveis.
 - `STORAGE_DIR` define onde os arquivos temporarios serao gravados.
+- `TEST_EMAIL_TOKEN` protege a rota `/api/test-email`.
 
 ## Rodando com Docker
 
@@ -159,16 +160,16 @@ Depois do deploy, valide:
 
 ## Teste de SMTP
 
-Com as variaveis SMTP configuradas, envie:
+Com as variaveis SMTP configuradas e `TEST_EMAIL_TOKEN` definido, envie:
 
 ```bash
-curl -X POST http://localhost:3000/test-email
+curl -H "x-test-email-token: troque-este-token" http://localhost:3000/api/test-email
 ```
 
 Em producao:
 
 ```bash
-curl -X POST https://seu-dominio.com/test-email
+curl -H "x-test-email-token: troque-este-token" https://seu-dominio.com/api/test-email
 ```
 
 Resposta de sucesso:
@@ -177,7 +178,27 @@ Resposta de sucesso:
 {"status":"ok","message":"E-mail de teste enviado com sucesso."}
 ```
 
-Se faltar alguma configuracao ou o servidor SMTP recusar a conexao, a rota retorna erro com detalhes.
+Essa rota envia anexos simples em memoria para validar o fluxo completo do codigo da aplicacao. Se faltar configuracao, o token estiver errado ou o servidor SMTP recusar a conexao, a rota retorna erro com detalhes.
+
+## Logs de e-mail
+
+Os logs da aplicacao registram:
+
+- `[EMAIL] Iniciando envio`
+- `[EMAIL] SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_FROM, SMTP_TO`
+- `[EMAIL] Anexos preparados com tamanho em bytes`
+- `[EMAIL] Enviado com sucesso` com `messageId`, `accepted`, `rejected` e `response`
+- `[EMAIL] Falha no envio` com o erro completo
+
+Nenhum log exibe a senha SMTP.
+
+## Status do job
+
+O endpoint `GET /progress/{jobId}` expone os campos:
+
+- `email_status`: `pending`, `sent`, `failed` ou `skipped`
+- `email_error`: mensagem do erro, quando houver
+- `email_message_id`: identificador retornado pelo servidor SMTP, quando houver
 
 ## Rotas
 
@@ -190,7 +211,7 @@ Se faltar alguma configuracao ou o servidor SMTP recusar a conexao, a rota retor
 | `GET` | `/progress/{jobId}` | Retorna o status do job |
 | `GET` | `/download/{jobId}/pdf` | Baixa o PDF gerado |
 | `GET` | `/download/{jobId}/excel` | Baixa a planilha Excel gerada |
-| `POST` | `/test-email` | Envia um e-mail de teste SMTP |
+| `GET` | `/api/test-email` | Envia um e-mail de teste SMTP com token |
 
 ## Estrutura principal
 
@@ -201,7 +222,7 @@ app/
   download/[jobId]/[fileType]/route.js
   health/route.js                   Health check
   api/health/route.js               Health check alternativo
-  test-email/route.js               Teste SMTP
+  api/test-email/route.js           Teste SMTP com token
 lib/
   conversion.js                     Orquestracao da conversao
   ofx.js                            Parser OFX
@@ -215,6 +236,7 @@ lib/
 
 - Nao envie arquivos que nao sejam `.ofx`.
 - Configure corretamente o SMTP antes de depender do envio automatico por e-mail.
+- Em caso de falha de SMTP, verifique os logs `[EMAIL]` para identificar a causa exata.
 - Mantenha `storage/` persistente em producao para evitar perda de arquivos durante o processamento.
 - Ajuste `TEMP_FILE_TTL_MINUTES` conforme o tempo que os usuarios precisam para baixar os relatorios.
 - Em caso de falha de SMTP, use os downloads exibidos na tela.
