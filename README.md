@@ -56,6 +56,7 @@ Exemplo:
 SMTP_HOST=mail.seudominio.com.br
 SMTP_PORT=465
 SMTP_SECURE=true
+SMTP_HELO_NAME=localhost
 SMTP_USER=usuario@seudominio.com.br
 SMTP_PASS=sua_senha
 SMTP_FROM=usuario@seudominio.com.br
@@ -72,6 +73,7 @@ Observacoes:
 
 - `SMTP_PORT=587` normalmente usa `SMTP_SECURE=false`.
 - `SMTP_PORT=465` deve usar `SMTP_SECURE=true`.
+- `SMTP_HELO_NAME` permite fixar o nome usado no EHLO/HELO. O padrao do projeto e `localhost`.
 - `SMTP_PASS` e a unica variavel aceita para senha SMTP.
 - `MAX_UPLOAD_MB` define o tamanho maximo aceito para upload.
 - `TEMP_FILE_TTL_MINUTES` define por quanto tempo os arquivos ficam disponiveis.
