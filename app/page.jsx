@@ -94,11 +94,7 @@ export default function HomePage() {
           </div>
 
           <footer className="card-footer">
-            <span>ORA Empresas</span>
-            <span className="dot" aria-hidden="true" />
-            <span>Processamento seguro</span>
-            <span className="dot" aria-hidden="true" />
-            <span>Dados privados</span>
+            <span>Projeto Desenvolvido por Jainel P Santana - SISTEMAS - PI</span>
           </footer>
         </article>
       </main>
