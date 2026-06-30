@@ -94,7 +94,7 @@ export default function HomePage() {
           </div>
 
           <footer className="card-footer">
-            <span>Projeto Desenvolvido por Jainel P Santana - SISTEMAS - PI</span>
+            <span>Projeto Desenvolvido por Jainel P Santana - SISTEMAS - TI</span>
           </footer>
         </article>
       </main>
